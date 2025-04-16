@@ -52,6 +52,8 @@
   <button onclick="connectWebSocket()">Connect WebSocket</button>
   <button onclick="disconnectWebSocket()">Disconnect WebSocket</button>
   <button onclick="sendToWebSocket()">Send to WebSocket</button>
+  <input type="checkbox" id="recvCheckbox" checked />
+  <label for="recvCheckbox">Receive remote image</label>  
 
   <script>
     const paletteColors = [
@@ -74,9 +76,11 @@
     const gridEl = document.getElementById("grid");
     const ipInput = document.getElementById("ipInput");
 
-    if (localStorage.getItem("ws_ip")) {
-      ipInput.value = localStorage.getItem("ws_ip");
-    }
+	// Load IP or use default
+	ipInput.value = localStorage.getItem("ws_ip") || "wss://bitluni.net:8443/";
+);
+	const recvCheckbox = document.getElementById("recvCheckbox");
+
 
     function renderPalette() {
       paletteEl.innerHTML = '';
@@ -195,33 +199,33 @@
 	}
 
     function connectWebSocket() {
-      const ip = ipInput.value.trim();
-      if (!ip) return alert("Enter WebSocket IP");
+		const ip = ipInput.value.trim();
+		if (!ip) return alert("Enter WebSocket IP");
 
-      localStorage.setItem("ws_ip", ip);
+		localStorage.setItem("ws_ip", ip);
 
-      socket = new WebSocket(ip);
-      socket.onopen = () => console.log("WebSocket connected");
-      socket.onmessage = (event) => {
-        const str = event.data.trim();
-		console.log(str);
-        if (!str.startsWith('s') /*|| str.length !== 241*/) return;
-        let i = 1;
-        for (let y = 11; y >= 0; y--) {
-          for (let x = 19; x >= 0; x--) {
-            const hex = str[i++];
-            const inv = parseInt(hex, 16);
-            const val = 15 - inv;
-            gridData[y][x] = val;
-			if( i == str.length) break;
-          }
-		  if( i == str.length) break;
-        }
-        renderGrid();
-        sendFrame();
-      };
-      socket.onclose = () => console.log("WebSocket closed");
-      socket.onerror = err => console.error("WebSocket error", err);
+		socket = new WebSocket(ip);
+		socket.onopen = () => console.log("WebSocket connected");
+		socket.onmessage = (event) => {
+			if (!recvCheckbox.checked) return;
+
+			const str = event.data.trim();
+			if (!str.startsWith('s') || str.length !== 241) return;
+
+			let i = 1;
+			for (let y = 11; y >= 0; y--) {
+				for (let x = 19; x >= 0; x--) {
+				const hex = str[i++];
+				const inv = parseInt(hex, 16);
+				const val = 15 - inv;
+				gridData[y][x] = val;
+				}
+			}
+			renderGrid();
+			sendFrame();
+		};
+		socket.onclose = () => console.log("WebSocket closed");
+		socket.onerror = err => console.error("WebSocket error", err);
     }
 
     function disconnectWebSocket() {
