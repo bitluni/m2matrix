@@ -51,6 +51,7 @@
   <input type="text" id="ipInput" placeholder="ws://localhost:1234" style="width: 300px;" />
   <button onclick="connectWebSocket()">Connect WebSocket</button>
   <button onclick="disconnectWebSocket()">Disconnect WebSocket</button>
+  <button onclick="sendToWebSocket()">Send to WebSocket</button>
 
   <script>
     const paletteColors = [
@@ -229,6 +230,24 @@
         socket = null;
       }
     }
+
+	function sendToWebSocket() {
+		if (!socket || socket.readyState !== WebSocket.OPEN) {
+			alert("WebSocket is not connected!");
+			return;
+		}
+
+		let data = 's';
+		for (let y = 11; y >= 0; y--) {
+			for (let x = 19; x >= 0; x--) {
+			const val = 15 - gridData[y][x];
+			data += val.toString(16);
+			}
+		}
+
+		socket.send(data);
+		console.log("Sent to WebSocket:", data);
+	}
 
     // Initialize
     renderPalette();
